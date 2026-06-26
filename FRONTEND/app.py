@@ -26,7 +26,7 @@ with st.sidebar:
     #Fetch authenticated active directory accounts for dynamic drop-down indexing
     contact_list = []
     try:
-        users_res = requests.get("http://127.0.0.1:8000/api/users")
+        users_res = requests.get("https://talksta.onrender.com/api/users")
         if users_res.status_code == 200:
             contact_list = users_res.json().get("users", [])
     except requests.exceptions.ConnectionError:
@@ -58,7 +58,7 @@ def load_chat_stream():
     try:
         # Pull complete communication logs mapping transaction indices
         history_response = requests.get(
-            "http://127.0.0.1:8000/get_messages", 
+            "https://talksta.onrender.com/get_messages", 
             params={"sender": username, "receiver": receiver}
         )
         
@@ -101,7 +101,7 @@ if user_message:
     }
     
     try:
-        response = requests.post("http://127.0.0.1:8000/send_message", json=payload)
+        response = requests.post("https://talksta.onrender.com/send_message", json=payload)
         if response.status_code == 200:
             st.rerun() #Enforce structural tree reload to reset client view state
         else:
