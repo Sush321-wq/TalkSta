@@ -6,11 +6,20 @@ import mysql.connector
 app = FastAPI()
 
 # Database Setup
+import os
+from urllib.parse import urlparse
+
+
+db_url = os.environ.get("DATABASE_URL")
+url = urlparse(db_url)
+
+# New dynamic config
 db_config = {
-    "host": "localhost",
-    "user": "root",
-    "password": "Sushmita@9876",
-    "database": "talksta"
+    "host": url.hostname,
+    "user": url.username,
+    "password": url.password,
+    "database": url.path.lstrip('/'),
+    "port": url.port
 }
 
 # 2. define data structure 
