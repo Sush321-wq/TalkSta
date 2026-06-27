@@ -34,13 +34,14 @@ with st.sidebar:
                     st.rerun()
         with tab2:
             new_u = st.text_input("New Username", key="sign_u")
+            new_email=st.text_input("Email",key="sign_email")
             new_p = st.text_input("New Password", type="password", key="sign_p")
             if st.button("Register"):
-                res = requests.post(f"https://talksta.onrender.com/signup", json={"username": new_u, "password": new_p})
+                res = requests.post(f"https://talksta.onrender.com/signup", json={"username": new_u, "email": new_email,"password": new_p})
                 if res.status_code == 200:
                     st.success("✅ Account Created! Now go to Login tab")
                 else:
-                    st.error("❌ Registration failed. Try another username")    
+                    st.error("res.text")    
     else:
         st.write(f"Logged in as: **{st.session_state.username}**")
         contact_list=requests.get("https://talksta.onrender.com/api/users").json().get("users",[])
