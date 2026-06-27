@@ -30,9 +30,15 @@ class MessagePayload(BaseModel):
 
 
 
-class UserAuth(BaseModel):
+class UserSignup(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
     username: str
     password: str
+
 
 
 # 3. POST Endpoint to transmission and saving of private messages
@@ -143,29 +149,30 @@ def get_all_users_list():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @app.post("/signup")
-def signup(user_data: UserAuth):
+def signup(user_data: UserSignup):
     try:
         db_connection = mysql.connector.connect(**db_config)
         cursor = db_connection.cursor()
         
         # Check if user already exists
-        cursor.execute("SELECT id FROM users WHERE username = %s", (user_data.username,))
+        cursor.execute("SELECT id FROM users WHERE username = %s OR email=%s", (user_data.username,user_data.email))
         if cursor.fetchone():
             cursor.close()
             db_connection.close()
             raise HTTPException(status_code=400, detail="User already exists")
             
         # Insert new user
-        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (user_data.username, user_data.password))
+        cursor.execute("INSERT INTO users (username,email, password) VALUES (%s, %s, %s)", (user_data.username,user_data.email, user_data.password))
         db_connection.commit()
         cursor.close()
         db_connection.close()
         return {"status": "success", "message": "User registered successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/login")
-def login(user_data: UserAuth):
+def login(user_data: UserLogin):
     try:
         db_connection = mysql.connector.connect(**db_config)
         cursor = db_connection.cursor()
@@ -181,9 +188,10 @@ def login(user_data: UserAuth):
             return {"status": "success", "username": user_data.username}
         else:
             raise HTTPException(status_code=401, detail="Invalid username or password")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 
