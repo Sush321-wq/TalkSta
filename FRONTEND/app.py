@@ -55,7 +55,12 @@ with col2:
     st.write("")
     st.markdown("<span class='status-tag'>● Server Connected</span>", unsafe_allow_html=True)
 
-st.markdown(f"<div style='background-color: #1E1E24; border-left: 4px solid #4F46E5; padding: 10px; border-radius: 4px;'>Active Session: Logged in as <b>{st.session_state.username}</b> | Chatting with <b>{st.session_state.receiver}</b> <span style='color: #34D399;'>● Online</span></div>", unsafe_allow_html=True)
+# --- MAIN HEADER LAYOUT ---
+if st.session_state.logged_in:
+    st.markdown(f"<div style='background-color: #1E1E24; border-left: 4px solid #4F46E5; padding: 10px; border-radius: 4px;'>Active Session: Logged in as <b>{st.session_state.username}</b> | Chatting with <b>{st.session_state.receiver}</b> <span style='color: #34D399;'>● Online</span></div>", unsafe_allow_html=True)
+else:
+    st.info("⚠️ Please log in from the sidebar to start chatting.")
+
 st.write("---")
 
 # --- ASYNCHRONOUS POLL LAYER (Real-Time Background Streaming) ---
@@ -72,7 +77,7 @@ def load_chat_stream():
             chat_history = history_response.json().get("messages", [])
             
             if not chat_history:
-                st.info(f"This is the beginning of your chat history with {receiver}. Say hi! 👋")
+                st.info(f"This is the beginning of your chat history with {st.session_state.receiver}. Say hi! 👋")
             
             for msg in chat_history:
                 if msg['sender_name'].lower() == st.session_state.username.lower():
