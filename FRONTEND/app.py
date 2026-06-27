@@ -68,6 +68,10 @@ st.write("---")
 # --- ASYNCHRONOUS POLL LAYER (Real-Time Background Streaming) ---
 @st.fragment(run_every=3)
 def load_chat_stream():
+    if not st.session_state.get("username"):
+        return
+
+
     try:
         # Pull complete communication logs mapping transaction indices
         history_response = requests.get(
@@ -103,6 +107,9 @@ load_chat_stream()
 user_message = st.chat_input("Write a private message...")
 
 if user_message:
+    if not st.session_state.get("username"):
+        st.error("⚠️ Please log in first to send messages!")
+        st.stop()
     # Optimistic client UI update rendering instantaneous visual block
     with st.chat_message("user"):
         st.markdown(f"**You** <br> {user_message}", unsafe_allow_html=True)
