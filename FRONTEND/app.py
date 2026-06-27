@@ -1,5 +1,10 @@
 import streamlit as st
 import requests
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+if 'receiver' not in st.session_state:
+    st.session_state.receiver = "durga" # Default fallback    
 
 # 1. UI Layout Configuration and Presentation Layer Styling
 st.set_page_config(page_title="Talksta Premium", page_icon="⚡", layout="wide")
@@ -14,32 +19,33 @@ st.markdown("""
 
 # --- SIDEBAR: PROFILE & DYNAMIC CONTACT SELECTION ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #4F46E5;'>⚡ Talksta Settings</h2>", unsafe_allow_html=True)
-    st.write("Configure your identity securely.")
-    
-    username = st.text_input("🔑 Active Username", value="sush").strip()
-    email = st.text_input("📧 Email Address", value="sush@gmail.com").strip()
-    
-    st.write("---")
-    st.markdown("<h3>🎯 Contact List </h3>", unsafe_allow_html=True)
-    
-    #Fetch authenticated active directory accounts for dynamic drop-down indexing
-    contact_list = []
-    try:
-        users_res = requests.get("https://talksta.onrender.com/api/users")
-        if users_res.status_code == 200:
-            contact_list = users_res.json().get("users", [])
-    except requests.exceptions.ConnectionError:
-        pass  # Default gracefully to empty array state if communication handshakes fail
-        
-    # Exclude self-identity reference from selectable recipient query array
-    filtered_contacts = [c for c in contact_list if c.lower() != username.lower()]
-    
-    #Fallback simulation instance array when operational directory is void
-    if not filtered_contacts:
-        filtered_contacts = ["durga"]
-        
-    receiver = st.selectbox("Choose Someone to text:", filtered_contacts)
+    if not st.session_state.logged_in:
+        st.markdown("## 🔐 Login to TalkSta")
+        tab1, tab2 = st.tabs(["Login", "Sign Up"])
+        with tab1:
+            user = st.text_input("Username", key="login_u")
+            pwd = st.text_input("Password", type="password", key="login_p")
+            if st.button("Login"):
+                # Backend login check
+                res = requests.post(f"https://talksta.onrender.com/login", json={"username": user, "password": pwd})
+                if res.status_code == 200:
+                    st.session_state.logged_in = True
+                    st.session_state.username = user
+                    st.rerun()
+        with tab2:
+            new_u = st.text_input("New Username", key="sign_u")
+            new_p = st.text_input("New Password", type="password", key="sign_p")
+            if st.button("Register"):
+                res = requests.post(f"https://talksta.onrender.com/signup", json={"username": new_u, "password": new_p})
+                if res.status_code == 200:
+                    st.success("Account Created!")
+    else:
+        st.write(f"Logged in as: **{st.session_state.username}**")
+        contact_list=requests.get("https://talksta.onrender.com/api/users").json().get("users",[])
+        st.session_state.receiver = st.selectbox("Choose Someone to text:", [c for c in contact_list if c != st.session_state.username])
+        if st.button("Logout"):
+            st.session_state.logged_in = False
+            st.rerun()
 
 # --- MAIN HEADER LAYOUT ---
 col1, col2 = st.columns([3, 1])
@@ -49,7 +55,7 @@ with col2:
     st.write("")
     st.markdown("<span class='status-tag'>● Server Connected</span>", unsafe_allow_html=True)
 
-st.markdown(f"<div style='background-color: #1E1E24; border-left: 4px solid #4F46E5; padding: 10px; border-radius: 4px;'>Active Session: Logged in as <b>{username}</b> | Chatting with <b>{receiver}</b> <span style='color: #34D399;'>● Online</span></div>", unsafe_allow_html=True)
+st.markdown(f"<div style='background-color: #1E1E24; border-left: 4px solid #4F46E5; padding: 10px; border-radius: 4px;'>Active Session: Logged in as <b>{st.session_state.username}</b> | Chatting with <b>{st.session_state.receiver}</b> <span style='color: #34D399;'>● Online</span></div>", unsafe_allow_html=True)
 st.write("---")
 
 # --- ASYNCHRONOUS POLL LAYER (Real-Time Background Streaming) ---
@@ -59,7 +65,7 @@ def load_chat_stream():
         # Pull complete communication logs mapping transaction indices
         history_response = requests.get(
             "https://talksta.onrender.com/get_messages", 
-            params={"sender": username, "receiver": receiver}
+            params={"sender": st.session_state.username, "receiver": st.session_state.receiver}
         )
         
         if history_response.status_code == 200:
@@ -69,7 +75,7 @@ def load_chat_stream():
                 st.info(f"This is the beginning of your chat history with {receiver}. Say hi! 👋")
             
             for msg in chat_history:
-                if msg['sender_name'].lower() == username.lower():
+                if msg['sender_name'].lower() == st.session_state.username.lower():
                     with st.chat_message("user"):
                         st.markdown(f"**You** <br> {msg['message_text']}", unsafe_allow_html=True)
                 else:
@@ -95,8 +101,8 @@ if user_message:
         st.markdown(f"**You** <br> {user_message}", unsafe_allow_html=True)
         
     payload = {
-        "sender": username,
-        "receiver": receiver,
+        "sender": st.session_state.username,
+        "receiver": st.session_state.receiver,
         "message": user_message
     }
     
