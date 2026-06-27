@@ -38,7 +38,9 @@ with st.sidebar:
             if st.button("Register"):
                 res = requests.post(f"https://talksta.onrender.com/signup", json={"username": new_u, "password": new_p})
                 if res.status_code == 200:
-                    st.success("Account Created!")
+                    st.success("✅ Account Created! Now go to Login tab")
+                else:
+                    st.error("❌ Registration failed. Try another username")    
     else:
         st.write(f"Logged in as: **{st.session_state.username}**")
         contact_list=requests.get("https://talksta.onrender.com/api/users").json().get("users",[])
