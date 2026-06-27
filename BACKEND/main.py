@@ -28,6 +28,13 @@ class MessagePayload(BaseModel):
     receiver: str
     message: str
 
+
+
+class UserAuth(BaseModel):
+    username: str
+    password: str
+
+
 # 3. POST Endpoint to transmission and saving of private messages
 @app.post("/send_message")
 def send_message(data: MessagePayload):
@@ -135,6 +142,50 @@ def get_all_users_list():
         return {"status": "success", "users": usernames}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@app.post("/signup")
+def signup(user_data: UserAuth):
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor()
+        
+        # Check if user already exists
+        cursor.execute("SELECT id FROM users WHERE username = %s", (user_data.username,))
+        if cursor.fetchone():
+            cursor.close()
+            db_connection.close()
+            raise HTTPException(status_code=400, detail="User already exists")
+            
+        # Insert new user
+        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (user_data.username, user_data.password))
+        db_connection.commit()
+        cursor.close()
+        db_connection.close()
+        return {"status": "success", "message": "User registered successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/login")
+def login(user_data: UserAuth):
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor()
+        
+        # Verify credentials
+        cursor.execute("SELECT id FROM users WHERE username = %s AND password = %s", (user_data.username, user_data.password))
+        user = cursor.fetchone()
+        
+        cursor.close()
+        db_connection.close()
+        
+        if user:
+            return {"status": "success", "username": user_data.username}
+        else:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
