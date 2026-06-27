@@ -67,7 +67,7 @@ else:
 st.write("---")
 
 # --- ASYNCHRONOUS POLL LAYER (Real-Time Background Streaming) ---
-@st.fragment(run_every=1)
+#@st.fragment(run_every=1)
 def load_chat_stream():
     if not st.session_state.get("username"):
         return
